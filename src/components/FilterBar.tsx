@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Star, SlidersHorizontal, Trash2, Search } from 'lucide-react';
+import { Star, SlidersHorizontal, Trash2 } from 'lucide-react';
 
 interface FilterBarProps {
   selectedGenre: string;
@@ -15,11 +15,6 @@ interface FilterBarProps {
   availableGenres: string[];
   availableYears: string[];
   onReset: () => void;
-  // Optional search & sort features to refine catalog
-  searchQuery?: string;
-  onSearchQueryChange?: (query: string) => void;
-  selectedSort?: string;
-  onSortChange?: (sort: string) => void;
 }
 
 export function FilterBar({
@@ -31,11 +26,7 @@ export function FilterBar({
   onRatingChange,
   availableGenres,
   availableYears,
-  onReset,
-  searchQuery,
-  onSearchQueryChange,
-  selectedSort,
-  onSortChange
+  onReset
 }: FilterBarProps) {
   // Set default genres just in case the dynamic parsing is incomplete on loading
   const genres = availableGenres.length > 0
@@ -51,13 +42,6 @@ export function FilterBar({
     { value: '6.0', label: '6.0+ Above Average' },
   ];
 
-  const hasActiveFilters = 
-    selectedGenre !== 'All' || 
-    selectedYear !== 'All' || 
-    selectedRating !== 'All' || 
-    (searchQuery && searchQuery !== '') || 
-    (selectedSort && selectedSort !== 'popular');
-
   return (
     <div id="filter-bar-container" className="glass p-5 rounded-2xl border border-white/5 shadow-xl space-y-4">
       
@@ -69,7 +53,7 @@ export function FilterBar({
         </div>
         
         {/* Reset Trigger */}
-        {hasActiveFilters && (
+        {(selectedGenre !== 'All' || selectedYear !== 'All' || selectedRating !== 'All') && (
           <button
             onClick={onReset}
             className="text-[11px] font-medium text-pink-400 hover:text-pink-300 flex items-center gap-1 active:scale-95 transition-all self-end"
@@ -101,35 +85,8 @@ export function FilterBar({
       </div>
 
       {/* Dropdown Filters Form layout */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${onSearchQueryChange && onSortChange ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4 pt-1`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
         
-        {/* Inline Search inside the repository pages */}
-        {onSearchQueryChange && (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="inline-search" className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Search Catalog</label>
-            <div className="relative">
-              <input
-                id="inline-search"
-                type="text"
-                value={searchQuery || ''}
-                onChange={(e) => onSearchQueryChange(e.target.value)}
-                placeholder="Title, genre, or star..."
-                className="w-full text-xs bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2.5 pl-9 pr-8 text-white focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 backdrop-blur-md transition-all placeholder:text-slate-500"
-              />
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              {(searchQuery && searchQuery !== '') && (
-                <button
-                  type="button"
-                  onClick={() => onSearchQueryChange('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer focus:outline-none"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Release Year Dropdown */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="year-select" className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Release Year</label>
@@ -167,27 +124,6 @@ export function FilterBar({
             </select>
           </div>
         </div>
-
-        {/* Sorting Criteria selection */}
-        {onSortChange && (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="sort-select" className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Sort By</label>
-            <div className="relative">
-              <select
-                id="sort-select"
-                value={selectedSort || 'popular'}
-                onChange={(e) => onSortChange(e.target.value)}
-                className="w-full text-xs bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 backdrop-blur-md cursor-pointer transition-all"
-              >
-                <option value="popular" className="bg-slate-950 text-slate-100">Most Popular</option>
-                <option value="rating-desc" className="bg-slate-950 text-slate-100">Top Rated (High-Low)</option>
-                <option value="year-desc" className="bg-slate-950 text-slate-100">Newest Releases</option>
-                <option value="year-asc" className="bg-slate-950 text-slate-100">Oldest Releases</option>
-                <option value="title-asc" className="bg-slate-950 text-slate-100">Alphabetical (A-Z)</option>
-              </select>
-            </div>
-          </div>
-        )}
 
       </div>
 

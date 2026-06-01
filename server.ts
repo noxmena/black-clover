@@ -25,13 +25,13 @@ async function startServer() {
   };
 
   async function fetchDetailsWithGemini(id: string, type: string) {
-    let officialTitle = "";
-    let officialImageUrl = "";
-    let officialYear = "";
-    let officialStars = "";
-
     try {
       // 1. Try to fetch the official title and actual poster from IMDb Suggestion API first!
+      let officialTitle = "";
+      let officialImageUrl = "";
+      let officialYear = "";
+      let officialStars = "";
+
       const imdbLookup = await searchIMDb(id);
       if (imdbLookup && Array.isArray(imdbLookup.d)) {
         const item = imdbLookup.d.find((x: any) => x.id && x.id.toLowerCase() === id.toLowerCase());
@@ -84,48 +84,27 @@ async function startServer() {
 ${officialTitle ? `The official authenticated title is "${officialTitle}" and released in "${officialYear}".` : ""}
 Return the official details.`;
       
-      let text = "";
-      let attempts = 0;
-      const maxAttempts = 3;
-      let delay = 600;
-
-      while (attempts < maxAttempts) {
-        try {
-          const response = await ai.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: prompt,
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                required: ["title", "year", "genre", "rating", "description"],
-                properties: {
-                  title: { type: Type.STRING },
-                  year: { type: Type.STRING },
-                  genre: { type: Type.STRING, description: "Main genres, e.g. Action, Horror" },
-                  rating: { type: Type.STRING, description: "IMDb rating e.g. 7.5" },
-                  description: { type: Type.STRING }
-                }
-              },
-              systemInstruction: "You are an expert movie database curator. Return accurate metadata for IMDb items."
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            required: ["title", "year", "genre", "rating", "description"],
+            properties: {
+              title: { type: Type.STRING },
+              year: { type: Type.STRING },
+              genre: { type: Type.STRING, description: "Main genres, e.g. Action, Horror" },
+              rating: { type: Type.STRING, description: "IMDb rating e.g. 7.5" },
+              description: { type: Type.STRING }
             }
-          });
-          text = response.text || "";
-          break; // success - break out of the retry loop
-        } catch (e: any) {
-          attempts++;
-          console.warn(`Gemini details fetch attempt ${attempts} failed for ${id}:`, e?.message || e);
-          if (attempts >= maxAttempts) {
-            console.error("Gemini details fetch failed all attempts.", e);
-            break;
-          }
-          // Delay with simple jitter
-          const jitter = Math.floor(Math.random() * 200);
-          await new Promise(resolve => setTimeout(resolve, delay + jitter));
-          delay *= 2;
+          },
+          systemInstruction: "You are an expert movie database curator. Return accurate metadata for IMDb items."
         }
-      }
+      });
 
+      const text = response.text;
       if (text) {
         const details = JSON.parse(text);
         
@@ -160,21 +139,6 @@ Return the official details.`;
     } catch (error) {
       console.error(`Gemini details fetch error for ${id}:`, error);
     }
-
-    if (officialTitle) {
-      return {
-        tmdb_id: id,
-        imdb_id: id,
-        title: officialTitle,
-        year: officialYear || "2024",
-        poster_url: officialImageUrl || "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500",
-        rating: "7.8",
-        genre: type === 'tv' ? "TV Show" : "Movie",
-        popularity: "90",
-        type: type as 'movie' | 'tv',
-        description: officialStars ? `Starring ${officialStars}. (Details retrieved from database)` : "No description available."
-      };
-    }
     return null;
   }
 
@@ -195,61 +159,6 @@ Return the official details.`;
       console.error("IMDb Search error:", e);
       return null;
     }
-  }
-
-  async function fetchGeminiSearchAmplified(query: string) {
-    const ai = getGeminiClient();
-    if (!ai) return [];
-    
-    let attempts = 0;
-    const maxAttempts = 3;
-    let delay = 600;
-
-    while (attempts < maxAttempts) {
-      try {
-        const schemaPrompt = `Identify the top 15-20 most popular and relevant theatrical movies or TV shows matching, belonging to the franchise of, or highly related to the search theme: "${query}". You must provide authentic, correct IMDb IDs (e.g. tt0120804 for Resident Evil). Ensure high accuracy.`;
-        
-        const response = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: schemaPrompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                required: ["title", "year", "imdb_id", "type", "description"],
-                properties: {
-                  title: { type: Type.STRING },
-                  year: { type: Type.STRING },
-                  imdb_id: { type: Type.STRING, description: "Authentic valid IMDb ID starting with 'tt'" },
-                  type: { type: Type.STRING, description: "movie or tv" },
-                  description: { type: Type.STRING }
-                }
-              }
-            },
-            systemInstruction: "You are an expert film and television database search engine. Return a comprehensive, authentic lists of franchise entries and related media with precise IMDb IDs."
-          }
-        });
-
-        const text = response.text;
-        if (text) {
-          return JSON.parse(text);
-        }
-        return [];
-      } catch (e: any) {
-        attempts++;
-        console.warn(`Gemini search amplify attempt ${attempts} failed:`, e?.message || e);
-        if (attempts >= maxAttempts) {
-          console.error("Gemini search amplify failed all attempts:", e);
-          break;
-        }
-        const jitter = Math.floor(Math.random() * 200);
-        await new Promise(resolve => setTimeout(resolve, delay + jitter));
-        delay *= 2;
-      }
-    }
-    return [];
   }
 
   // --- API ROUTES ---
@@ -297,24 +206,18 @@ Return the official details.`;
         }
       }
 
-      // 1. Kick off IMDb autocomplete search and Gemini deep-franchise amplification in parallel!
-      const [imdbData, geminiList] = await Promise.all([
-        searchIMDb(query),
-        fetchGeminiSearchAmplified(query)
-      ]);
-
+      // Live IMDb search autocomplete
+      const imdbData = await searchIMDb(query);
       const movies: any[] = [];
       const shows: any[] = [];
-      const seenIds = new Set<string>();
 
-      // 2. Load primary matches from live IMDb autocomplete
       if (imdbData && Array.isArray(imdbData.d)) {
         for (const item of imdbData.d) {
           if (!item.id) continue;
           
-          const itemIdLower = item.id.toLowerCase();
           const isTv = item.q && (item.q.toLowerCase().includes('series') || item.q.toLowerCase().includes('tv') || item.q.toLowerCase().includes('episode'));
           
+          // Fully resilient image extraction from IMDb Suggestions format
           let posterUrl = "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500";
           if (item.i) {
             let rawUrl = "";
@@ -349,8 +252,7 @@ Return the official details.`;
             description: stars ? `Starring ${stars}. Released in ${year}.` : `Released in ${year}.`
           };
 
-          dynamicCache.set(itemIdLower, mediaItem);
-          seenIds.add(itemIdLower);
+          dynamicCache.set(item.id.toLowerCase(), mediaItem);
 
           if (isTv) {
             shows.push(mediaItem);
@@ -360,30 +262,45 @@ Return the official details.`;
         }
       }
 
-      // 3. Resolve and backfill the Gemini-sourced franchise elements in parallel!
-      if (Array.isArray(geminiList) && geminiList.length > 0) {
-        const lookupPromises = geminiList.map(async (x: any) => {
-          if (!x.imdb_id || !x.imdb_id.startsWith('tt')) return null;
-          const id = x.imdb_id.toLowerCase();
-          
-          if (seenIds.has(id)) return null; // Already present in live autocomplete
-
-          let posterUrl = "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500";
-          let title = x.title;
-          let year = x.year;
-          let stars = "";
-
-          try {
-            // Fetch official high-quality poster and verified details directly from IMDb Suggest endpoint!
-            const subLookup = await searchIMDb(id);
-            if (subLookup && Array.isArray(subLookup.d)) {
-              const subItem = subLookup.d.find((si: any) => si.id && si.id.toLowerCase() === id);
-              if (subItem) {
-                title = subItem.l || title;
-                year = String(subItem.y || year);
-                stars = subItem.s || "";
-                
-                if (subItem.i) {
+      // If absolutely no matches are found on IMDb suggestion API, ask Gemini to find actual items
+      if (movies.length === 0 && shows.length === 0) {
+        const ai = getGeminiClient();
+        if (ai) {
+          const schemaPrompt = `Return list of 1 to 3 matching movies or TV shows matching the name or concept: "${query}". Provide authentic IMDb IDs.`;
+          const response = await ai.models.generateContent({
+            model: "gemini-3.5-flash",
+            contents: schemaPrompt,
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  required: ["title", "year", "imdb_id", "type", "description"],
+                  properties: {
+                    title: { type: Type.STRING },
+                    year: { type: Type.STRING },
+                    imdb_id: { type: Type.STRING, description: "Actual valid IMDb ID starting with 'tt'" },
+                    type: { type: Type.STRING, description: 'movie or tv' },
+                    description: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          });
+          const text = response.text;
+          if (text) {
+            const list = JSON.parse(text);
+            for (const x of list) {
+              if (!x.imdb_id || !x.imdb_id.startsWith('tt')) continue;
+              const id = x.imdb_id.toLowerCase();
+              
+              // Try to do a quick lookup on IMDb for this dynamic item to get its OFFICIAL cover
+              let officialPoster = "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500";
+              const subLookup = await searchIMDb(id);
+              if (subLookup && Array.isArray(subLookup.d)) {
+                const subItem = subLookup.d.find((si: any) => si.id && si.id.toLowerCase() === id);
+                if (subItem && subItem.i) {
                   let rawUrl = "";
                   if (typeof subItem.i === 'string') {
                     rawUrl = subItem.i;
@@ -393,43 +310,33 @@ Return the official details.`;
                     rawUrl = subItem.i.imageUrl;
                   }
                   if (rawUrl) {
-                    posterUrl = rawUrl.replace(/\._V1_.*\.jpg$/, "._V1_UX300_CR0,0,300,450_AL_.jpg");
-                    if (!posterUrl.includes("http")) {
-                      posterUrl = rawUrl;
+                    officialPoster = rawUrl.replace(/\._V1_.*\.jpg$/, "._V1_UX300_CR0,0,300,450_AL_.jpg");
+                    if (!officialPoster.includes("http")) {
+                      officialPoster = rawUrl;
                     }
                   }
                 }
               }
+
+              const mediaItem = {
+                tmdb_id: id,
+                imdb_id: id,
+                title: x.title,
+                year: x.year,
+                poster_url: officialPoster,
+                rating: "8.0",
+                genre: x.type === 'tv' ? "TV Show" : "Movie",
+                popularity: "90",
+                type: x.type === 'tv' ? 'tv' : 'movie',
+                description: x.description
+              };
+              dynamicCache.set(id, mediaItem);
+              if (x.type === 'tv') {
+                shows.push(mediaItem);
+              } else {
+                movies.push(mediaItem);
+              }
             }
-          } catch (subErr) {
-            console.error(`Metadata lookup error for ${id}:`, subErr);
-          }
-
-          return {
-            tmdb_id: id,
-            imdb_id: id,
-            title: title || x.title,
-            year: year || x.year || "2024",
-            poster_url: posterUrl,
-            rating: "8.0",
-            genre: x.type === 'tv' ? (stars ? `Stars: ${stars}` : "TV Show") : (stars ? `Stars: ${stars}` : "Movie"),
-            popularity: "90",
-            type: x.type === 'tv' ? 'tv' : 'movie',
-            description: stars ? `Starring ${stars}. ${x.description || ''}` : (x.description || '')
-          };
-        });
-
-        const resolvedGeminiItems = (await Promise.all(lookupPromises)).filter(Boolean);
-
-        for (const mediaItem of resolvedGeminiItems) {
-          if (!mediaItem) continue;
-          dynamicCache.set(mediaItem.imdb_id.toLowerCase(), mediaItem);
-          seenIds.add(mediaItem.imdb_id.toLowerCase());
-
-          if (mediaItem.type === 'tv') {
-            shows.push(mediaItem);
-          } else {
-            movies.push(mediaItem);
           }
         }
       }

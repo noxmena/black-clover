@@ -18,12 +18,10 @@ export function TVShows() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
-  // Filter & Catalog States
+  // Filter States
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
   const [selectedYear, setSelectedYear] = useState<string>('All');
   const [selectedRating, setSelectedRating] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedSort, setSelectedSort] = useState<string>('popular');
 
   useEffect(() => {
     async function loadInitial() {
@@ -60,50 +58,23 @@ export function TVShows() {
     new Set<string>(shows.flatMap(s => s.genre ? s.genre.split(',').map(g => g.trim()) : []))
   );
 
-  // Apply filters and sorting client-side
-  const filteredShows = shows
-    .filter(s => {
-      const genreMatch = selectedGenre === 'All' || 
-        (s.genre && s.genre.toLowerCase().includes(selectedGenre.toLowerCase()));
-      
-      const yearMatch = selectedYear === 'All' || s.year === selectedYear;
-      
-      const ratingNum = parseFloat(s.rating || '0');
-      const threshold = selectedRating === 'All' ? 0 : parseFloat(selectedRating);
-      const ratingMatch = ratingNum >= threshold;
+  const filteredShows = shows.filter(s => {
+    const genreMatch = selectedGenre === 'All' || 
+      (s.genre && s.genre.toLowerCase().includes(selectedGenre.toLowerCase()));
+    
+    const yearMatch = selectedYear === 'All' || s.year === selectedYear;
+    
+    const ratingNum = parseFloat(s.rating || '0');
+    const threshold = selectedRating === 'All' ? 0 : parseFloat(selectedRating);
+    const ratingMatch = ratingNum >= threshold;
 
-      const inlineSearchMatch = !searchQuery || 
-        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.genre && s.genre.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return genreMatch && yearMatch && ratingMatch && inlineSearchMatch;
-    })
-    .sort((a, b) => {
-      if (selectedSort === 'rating-desc') {
-        const ratingA = parseFloat(a.rating || '0');
-        const ratingB = parseFloat(b.rating || '0');
-        return ratingB - ratingA;
-      } else if (selectedSort === 'year-desc') {
-        return b.year.localeCompare(a.year);
-      } else if (selectedSort === 'year-asc') {
-        return a.year.localeCompare(b.year);
-      } else if (selectedSort === 'title-asc') {
-        return a.title.localeCompare(b.title);
-      } else {
-        // default: 'popular'
-        const popA = parseFloat(a.popularity || '0');
-        const popB = parseFloat(b.popularity || '0');
-        return popB - popA;
-      }
-    });
+    return genreMatch && yearMatch && ratingMatch;
+  });
 
   const handleResetFilters = () => {
     setSelectedGenre('All');
     setSelectedYear('All');
     setSelectedRating('All');
-    setSearchQuery('');
-    setSelectedSort('popular');
   };
 
   return (
@@ -132,10 +103,6 @@ export function TVShows() {
           availableGenres={availableGenres}
           availableYears={availableYears}
           onReset={handleResetFilters}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          selectedSort={selectedSort}
-          onSortChange={setSelectedSort}
         />
 
         {/* Grid List */}

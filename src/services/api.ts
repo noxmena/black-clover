@@ -77,125 +77,15 @@ export function getDidYouMeanSuggestion(query: string, itemsList: Array<{ title:
   return bestMatch;
 }
 
-let moviePagesFetched = 0;
-let tvPagesFetched = 0;
-
-function generateProceduralMovies(count: number, startIdIndex: number): Movie[] {
-  const titles = [
-    "The Dark Knight Rises", "The Batman", "Captain America: Brave New World", "Spider-Man: Beyond the Spider-Verse", 
-    "Avatar: Fire and Ash", "Kingdom of the Planet of the Apes", "Blade Runner 2049", "The Godfather", "The Godfather: Part II",
-    "Pulp Fiction", "Schindler's List", "12 Angry Men", "Spirited Away", "Whiplash", "Parasite", "The Prestige",
-    "Django Unchained", "The Departed", "Gladiator", "The Lion King", "WALL-E", "Up", "Guardians of the Galaxy Vol. 3",
-    "Avengers: Infinity War", "Spider-Man: Homecoming", "Blade Runner", "Star Wars: A New Hope", "The Empire Strikes Back",
-    "Return of the Jedi", "The Shining", "Alien", "Aliens", "Psycho", "Fight Club", "Casablanca"
-  ];
-  const genres = [
-    "Action, Sci-Fi", "Action, Adventure", "Animation, Action", "Drama, Crime", "Sci-Fi, Adventure", "Drama, Biography",
-    "Action, Thriller", "Adventure, Fantasy", "Comedy, Drama", "Horror, Mystery", "Sci-Fi, Thriller"
-  ];
-  const years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"];
-
-  const list: Movie[] = [];
-  for (let i = 0; i < count; i++) {
-    const idx = startIdIndex + i;
-    const baseTitle = titles[idx % titles.length];
-    const suffixGroup = Math.floor(idx / titles.length);
-    const title = suffixGroup > 0 ? `${baseTitle} (Part ${suffixGroup + 1})` : baseTitle;
-    const genre = genres[(idx * 3) % genres.length];
-    const year = years[(idx * 7) % years.length];
-    const rating = (7.0 + ((idx * 13) % 26) / 10).toFixed(1);
-    const tmdbId = String(100000 + idx);
-    const imdbId = `tt${1234567 + idx}`;
-    const popularity = (500 + ((idx * 23) % 2500)).toFixed(2);
-    const posterUrls = [
-      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500",
-      "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=500",
-      "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500",
-      "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500",
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500",
-      "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=500",
-      "https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=500"
-    ];
-
-    list.push({
-      tmdb_id: tmdbId,
-      imdb_id: imdbId,
-      title,
-      year,
-      poster_url: posterUrls[idx % posterUrls.length],
-      rating,
-      genre,
-      popularity,
-      type: "movie",
-      embed_url: `https://vaplayer.ru/embed/movie/${imdbId}`
-    });
-  }
-  return list;
-}
-
-function generateProceduralTVShows(count: number, startIdIndex: number): TVShow[] {
-  const titles = [
-    "Better Call Saul", "The Sopranos", "The Wire", "Rick and Morty", "Sherlock", "Fargo", "True Detective", "The Crown",
-    "The Boys", "Invincible", "The Bear", "Shogun", "Andor", "The Mandalorian", "Loki", "Severance", "Succession",
-    "Ted Lasso", "Reacher", "Black Mirror", "Peaky Blinders", "Narcos", "Dark", "Mindhunter", "The Witcher", "The Penguin",
-    "Dune: Prophecy", "Agatha All Along", "Daredevil: Born Again"
-  ];
-  const genres = [
-    "Drama, Crime", "Sci-Fi & Fantasy, Action & Adventure", "Drama, Mystery", "Sci-Fi & Fantasy, Action", "Comedy, Drama",
-    "Action & Adventure, Crime", "Drama, Thriller", "Sci-Fi, Thriller"
-  ];
-  const years = ["2015", "2018", "2020", "2021", "2022", "2023", "2024", "2025", "2026"];
-
-  const list: TVShow[] = [];
-  for (let i = 0; i < count; i++) {
-    const idx = startIdIndex + i;
-    const baseTitle = titles[idx % titles.length];
-    const suffixGroup = Math.floor(idx / titles.length);
-    const title = suffixGroup > 0 ? `${baseTitle} (Season ${suffixGroup + 1})` : baseTitle;
-    const genre = genres[(idx * 3) % genres.length];
-    const year = years[(idx * 7) % years.length];
-    const rating = (7.0 + ((idx * 11) % 26) / 10).toFixed(1);
-    const tmdbId = String(200000 + idx);
-    const imdbId = `tt${2345678 + idx}`;
-    const popularity = (500 + ((idx * 19) % 2000)).toFixed(2);
-    const posterUrls = [
-      "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=500",
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500",
-      "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=500",
-      "https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=500"
-    ];
-
-    list.push({
-      tmdb_id: tmdbId,
-      imdb_id: imdbId,
-      title,
-      year,
-      poster_url: posterUrls[(idx + 2) % posterUrls.length],
-      rating,
-      genre,
-      popularity,
-      type: "tv",
-      embed_url: `https://vaplayer.ru/embed/tv/${imdbId}`
-    });
-  }
-  return list;
-}
-
 /**
  * Fetch Movies spanning up to 3 pages
  */
 export async function fetchAllMovies(maxPages = 3): Promise<Movie[]> {
-  if (moviePagesFetched >= maxPages && cachedMovies.length > 0) {
-    return cachedMovies;
-  }
+  if (cachedMovies.length > 0) return cachedMovies;
 
-  if (cachedMovies.length === 0) {
-    cachedMovies = [...FALLBACK_MOVIES];
-    moviePagesFetched = 1;
-  }
-
-  for (let page = moviePagesFetched + 1; page <= maxPages; page++) {
-    try {
+  const movies: Movie[] = [];
+  try {
+    for (let page = 1; page <= maxPages; page++) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
 
@@ -205,21 +95,18 @@ export async function fetchAllMovies(maxPages = 3): Promise<Movie[]> {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data && Array.isArray(data.items)) {
-        cachedMovies.push(...data.items);
+        movies.push(...data.items);
       }
-    } catch (error) {
-      console.warn(`VidAPI Movie Page ${page} fetch error, appending rich fallback movies.`);
-      // Append 15 distinctive procedural films starting at correct offset
-      const extras = generateProceduralMovies(15, (page - 2) * 15 + 1);
-      cachedMovies.push(...extras);
     }
+    // Remove duplicates if any
+    const uniqueMap = new Map<string, Movie>();
+    movies.forEach(m => uniqueMap.set(m.tmdb_id || m.imdb_id, m));
+    cachedMovies = Array.from(uniqueMap.values());
+  } catch (error) {
+    console.warn("VidAPI Movie fetch error (likely CORS or Offline), falling back to offline preset data:", error);
+    // Use fallback
+    cachedMovies = [...FALLBACK_MOVIES];
   }
-
-  // De-duplicate
-  const uniqueMap = new Map<string, Movie>();
-  cachedMovies.forEach(m => uniqueMap.set(m.tmdb_id || m.imdb_id, m));
-  cachedMovies = Array.from(uniqueMap.values());
-  moviePagesFetched = Math.max(moviePagesFetched, maxPages);
 
   return cachedMovies;
 }
@@ -228,17 +115,11 @@ export async function fetchAllMovies(maxPages = 3): Promise<Movie[]> {
  * Fetch TV Shows spanning up to 3 pages
  */
 export async function fetchAllTVShows(maxPages = 3): Promise<TVShow[]> {
-  if (tvPagesFetched >= maxPages && cachedTVShows.length > 0) {
-    return cachedTVShows;
-  }
+  if (cachedTVShows.length > 0) return cachedTVShows;
 
-  if (cachedTVShows.length === 0) {
-    cachedTVShows = [...FALLBACK_TV_SHOWS];
-    tvPagesFetched = 1;
-  }
-
-  for (let page = tvPagesFetched + 1; page <= maxPages; page++) {
-    try {
+  const shows: TVShow[] = [];
+  try {
+    for (let page = 1; page <= maxPages; page++) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
 
@@ -248,19 +129,16 @@ export async function fetchAllTVShows(maxPages = 3): Promise<TVShow[]> {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data && Array.isArray(data.items)) {
-        cachedTVShows.push(...data.items);
+        shows.push(...data.items);
       }
-    } catch (error) {
-      console.warn(`VidAPI TV Show Page ${page} fetch error, appending rich fallback TV Shows.`);
-      const extras = generateProceduralTVShows(15, (page - 2) * 15 + 1);
-      cachedTVShows.push(...extras);
     }
+    const uniqueMap = new Map<string, TVShow>();
+    shows.forEach(s => uniqueMap.set(s.tmdb_id || s.imdb_id, s));
+    cachedTVShows = Array.from(uniqueMap.values());
+  } catch (error) {
+    console.warn("VidAPI TV Show fetch error (likely CORS or Offline), falling back to offline preset data:", error);
+    cachedTVShows = [...FALLBACK_TV_SHOWS];
   }
-
-  const uniqueMap = new Map<string, TVShow>();
-  cachedTVShows.forEach(s => uniqueMap.set(s.tmdb_id || s.imdb_id, s));
-  cachedTVShows = Array.from(uniqueMap.values());
-  tvPagesFetched = Math.max(tvPagesFetched, maxPages);
 
   return cachedTVShows;
 }
