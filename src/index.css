@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --color-mid-bg: #050d1a;
+  --color-accent-blue: #6C9EFF;
+  --color-accent-purple: #A855F7;
+  --color-card-bg: rgba(8, 16, 32, 0.8);
+}
+
+:root {
+  background-color: #050d1a;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050d1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6C9EFF;
+}
+
+/* Glassmorphism custom classes */
+.glass {
+  background-color: rgba(8, 16, 32, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(108, 158, 255, 0.15);
+}
+
+.glass-card {
+  background-color: rgba(6, 12, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(108, 158, 255, 0.2);
+}
+
+.glow-text {
+  background: linear-gradient(135deg, #6C9EFF 0%, #A855F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-border {
+  border: 1px solid rgba(108, 158, 255, 0.4);
+  box-shadow: 0 0 15px rgba(108, 158, 255, 0.2);
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(108, 158, 255, 0.15);
+  border-color: rgba(108, 158, 255, 0.4);
+}
+
+.hero-gradient {
+  background: linear-gradient(to right, #050d1a 0%, rgba(5, 13, 26, 0.8) 40%, rgba(5, 13, 26, 0.2) 80%, transparent 100%);
+}
+
+.hero-bottom-gradient {
+  background: linear-gradient(to top, #050d1a 0%, rgba(5, 13, 26, 0.6) 50%, transparent 100%);
+}
+
+.gradient-pill {
+  background: rgba(8, 16, 32, 0.8);
+  border: 1px solid rgba(108, 158, 255, 0.15);
+  color: #94a3b8;
+  transition: all 0.2s ease;
+}
+
+.gradient-pill:hover {
+  color: white;
+  border-color: rgba(108, 158, 255, 0.4);
+}
+
+.gradient-pill-active {
+  background: linear-gradient(135deg, rgba(108, 158, 255, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border: 1px solid rgba(108, 158, 255, 0.6);
+  color: white;
+  box-shadow: 0 0 10px rgba(108, 158, 255, 0.2);
+}
+

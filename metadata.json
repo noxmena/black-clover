@@ -1,0 +1,6 @@
+{
+  "name": "StreamVault",
+  "description": "A premium midnight-themed streaming platform interface featuring ad-blocked embeds, automated resume, progress tracking, fuzzy search with suggestions, and personalized watchlist.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
